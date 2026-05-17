@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TypeRush — Typing Speed Test</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a35;
+    --accent: #7c6dff;
+    --accent2: #ff6b9d;
+    --success: #4ecca3;
+    --warn: #ffcc5c;
+    --text: #f0eeff;
+    --muted: #6b6888;
+    --error-bg: #ff4d6d22;
+    --correct: #4ecca3;
+    --wrong: #ff4d6d;
+  }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .logo {
+    font-family: 'Space Mono', monospace;
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .tagline {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 6px;
+    font-weight: 300;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 760px;
+  }
+
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .stat-unit {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  #timer-value { color: var(--warn); }
+  #wpm-value { color: var(--accent); }
+  #acc-value { color: var(--success); }
+
+  .difficulty-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    background: var(--surface);
+    padding: 6px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .diff-btn {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'Sora', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .diff-btn.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  .text-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    min-height: 120px;
+  }
+
+  #passage {
+    font-family: 'Space Mono', monospace;
+    font-size: 1.1rem;
+    line-height: 2;
+    letter-spacing: 0.3px;
+    color: var(--muted);
+    user-select: none;
+    word-break: break-word;
+  }
+
+  #passage span { transition: color 0.08s; }
+  #passage span.correct { color: var(--correct); }
+  #passage span.wrong { color: var(--wrong); background: var(--error-bg); border-radius: 2px; }
+  #passage span.current { color: var(--text); border-bottom: 2px solid var(--accent); }
+
+  .input-area {
+    position: relative;
+    margin-bottom: 1.5rem;
+  }
+
+  #typing-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'Space Mono', monospace;
+    font-size: 1rem;
+    padding: 1rem 1.25rem;
+    outline: none;
+    transition: border-color 0.2s;
+    resize: none;
+  }
+
+  #typing-input:focus { border-color: var(--accent); }
+  #typing-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 0.85rem;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Sora', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .btn-primary:hover { background: #6a5ce6; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover { color: var(--text); border-color: var(--accent); }
+
+  .result-overlay {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    text-align: center;
+    margin-top: 1rem;
+    animation: fadeUp 0.4s ease;
+  }
+
+  .result-overlay.show { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .result-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 2rem 0;
+  }
+
+  .result-stat {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 1.2rem;
+  }
+
+  .result-stat .val {
+    font-family: 'Space Mono', monospace;
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  .result-stat .lbl {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-gold { background: #ffcc5c22; color: var(--warn); border: 1px solid #ffcc5c55; }
+  .badge-blue { background: #7c6dff22; color: var(--accent); border: 1px solid #7c6dff55; }
+  .badge-green { background: #4ecca322; color: var(--success); border: 1px solid #4ecca355; }
+  .badge-pink { background: #ff6b9d22; color: var(--accent2); border: 1px solid #ff6b9d55; }
+
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    width: 0%;
+    transition: width 0.1s linear;
+  }
+
+  @media (max-width: 540px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .result-grid { grid-template-columns: repeat(2, 1fr); }
+    .logo { font-size: 1.8rem; }
+    #passage { font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TypeRush</div>
+  <p class="tagline">How fast can you type?</p>
+</header>
+
+<div class="container">
+
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-label">Time Left</div>
+      <div class="stat-value" id="timer-value">60</div>
+      <div class="stat-unit">seconds</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Speed</div>
+      <div class="stat-value" id="wpm-value">0</div>
+      <div class="stat-unit">WPM</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Accuracy</div>
+      <div class="stat-value" id="acc-value">100</div>
+      <div class="stat-unit">%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Errors</div>
+      <div class="stat-value" id="errors-value">0</div>
+      <div class="stat-unit">chars</div>
+    </div>
+  </div>
+
+  <div class="difficulty-bar">
+    <button class="diff-btn active" data-level="easy">Easy</button>
+    <button class="diff-btn" data-level="medium">Medium</button>
+    <button class="diff-btn" data-level="hard">Hard</button>
+  </div>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+  <div class="text-box">
+    <div id="passage"></div>
+  </div>
+
+  <div class="input-area">
+    <textarea id="typing-input" rows="3" placeholder="Click here and start typing to begin the test..." disabled></textarea>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" id="start-btn">Start Test</button>
+    <button class="btn btn-secondary" id="reset-btn">New Passage</button>
+  </div>
+
+  <div class="result-overlay" id="result-overlay">
+    <div class="result-title" id="result-title">Test Complete!</div>
+    <div class="badge badge-gold" id="result-badge">🏆 Excellent!</div>
+    <div class="result-grid">
+      <div class="result-stat">
+        <div class="val" id="r-wpm" style="color:var(--accent)">0</div>
+        <div class="lbl">Words / Min</div>
+      </div>
+      <div class="result-stat">
+        <div class="val" id="r-acc" style="color:var(--success)">0%</div>
+        <div class="lbl">Accuracy</div>
+      </div>
+      <div class="result-stat">
+        <div class="val" id="r-chars" style="color:var(--accent2)">0</div>
+        <div class="lbl">Chars Typed</div>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="resetGame()" style="max-width:200px; margin: 0 auto; display:block;">Try Again</button>
+  </div>
+
+</div>
+
+<script>
+const passages = {
+  easy: [
+    "The sun sets in the west every evening and rises in the east each morning. Birds sing and flowers bloom in the warm light of day.",
+    "A simple life is often the best life. We eat good food, sleep well, and spend time with the people we love most.",
+    "Dogs are loyal friends. They play with us, guard our homes, and always greet us with joy when we return.",
+    "Books open doors to new worlds. Reading helps us learn new things and understand the lives of others.",
+    "Water is essential for all life. We drink it, cook with it, and use it to keep ourselves and our homes clean.",
+  ],
+  medium: [
+    "Technology has transformed the way we communicate with each other. Messages that once took weeks to deliver now arrive in seconds anywhere around the globe.",
+    "Learning a new language requires patience and consistent daily practice. Mistakes are not failures; they are valuable stepping stones on the path to fluency.",
+    "Artificial intelligence is rapidly changing many industries, from healthcare and education to finance and transportation, reshaping how we work and live.",
+    "The ocean covers more than seventy percent of our planet's surface and remains one of the least explored environments known to science.",
+    "Climate change is one of the most pressing challenges facing humanity today, requiring cooperation between governments, businesses, and individuals worldwide.",
+  ],
+  hard: [
+    "Quantum computing leverages the principles of superposition and entanglement to perform calculations exponentially faster than classical binary processors for specific problem types.",
+    "The juxtaposition of Byzantine architecture with modern minimalism creates a fascinating aesthetic tension that challenges conventional notions of temporal and stylistic coherence.",
+    "Neuroplasticity, the brain's remarkable ability to reorganize synaptic connections, suggests that cognitive rehabilitation programs can meaningfully restore function after traumatic injury.",
+    "Cryptographic hash functions are deterministic algorithms that map arbitrary data to fixed-size digest values, ensuring data integrity through avalanche effects and collision resistance.",
+    "The philosophical paradox of free will versus determinism continues to perplex scholars, intertwining neuroscience, metaphysics, and fundamental questions about moral responsibility.",
+  ]
+};
+
+let currentPassage = '';
+let spanEls = [];
+let currentIndex = 0;
+let totalErrors = 0;
+let totalTyped = 0;
+let timerInterval = null;
+let timeLeft = 60;
+let started = false;
+let finished = false;
+let difficulty = 'easy';
+
+const passageEl = document.getElementById('passage');
+const inputEl = document.getElementById('typing-input');
+const timerEl = document.getElementById('timer-value');
+const wpmEl = document.getElementById('wpm-value');
+const accEl = document.getElementById('acc-value');
+const errorsEl = document.getElementById('errors-value');
+const progressEl = document.getElementById('progress-fill');
+const startBtn = document.getElementById('start-btn');
+const resultOverlay = document.getElementById('result-overlay');
+
+function pickPassage() {
+  const arr = passages[difficulty];
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function buildPassage() {
+  currentPassage = pickPassage();
+  passageEl.innerHTML = '';
+  spanEls = [];
+  currentPassage.split('').forEach(ch => {
+    const s = document.createElement('span');
+    s.textContent = ch;
+    passageEl.appendChild(s);
+    spanEls.push(s);
+  });
+  spanEls[0] && spanEls[0].classList.add('current');
+}
+
+function resetGame() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  timeLeft = 60;
+  started = false;
+  finished = false;
+  currentIndex = 0;
+  totalErrors = 0;
+  totalTyped = 0;
+  timerEl.textContent = '60';
+  wpmEl.textContent = '0';
+  accEl.textContent = '100';
+  errorsEl.textContent = '0';
+  progressEl.style.width = '0%';
+  inputEl.value = '';
+  inputEl.disabled = true;
+  startBtn.textContent = 'Start Test';
+  resultOverlay.classList.remove('show');
+  buildPassage();
+}
+
+function startGame() {
+  if (finished) return;
+  inputEl.disabled = false;
+  inputEl.focus();
+  inputEl.placeholder = 'Type the text above...';
+  startBtn.textContent = 'Running...';
+  startBtn.disabled = true;
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = timeLeft;
+    const elapsed = 60 - timeLeft;
+    if (elapsed > 0) {
+      const words = totalTyped / 5;
+      wpmEl.textContent = Math.round((words / elapsed) * 60);
+    }
+    progressEl.style.width = ((60 - timeLeft) / 60 * 100) + '%';
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+}
+
+function endGame() {
+  clearInterval(timerInterval);
+  finished = true;
+  inputEl.disabled = true;
+  startBtn.disabled = false;
+  startBtn.textContent = 'Start Test';
+  progressEl.style.width = '100%';
+
+  const elapsed = Math.max(60 - timeLeft, 1);
+  const wpm = Math.round((totalTyped / 5 / elapsed) * 60);
+  const acc = totalTyped > 0 ? Math.round(((totalTyped - totalErrors) / totalTyped) * 100) : 100;
+
+  document.getElementById('r-wpm').textContent = wpm;
+  document.getElementById('r-acc').textContent = acc + '%';
+  document.getElementById('r-chars').textContent = totalTyped;
+
+  let badge = '';
+  if (wpm >= 80) badge = '<span class="badge badge-gold">🏆 Lightning Fast!</span>';
+  else if (wpm >= 60) badge = '<span class="badge badge-blue">⚡ Speed Demon</span>';
+  else if (wpm >= 40) badge = '<span class="badge badge-green">✅ Good Typist</span>';
+  else badge = '<span class="badge badge-pink">💪 Keep Practicing</span>';
+
+  document.getElementById('result-badge').outerHTML = badge;
+  resultOverlay.classList.add('show');
+}
+
+inputEl.addEventListener('input', () => {
+  if (finished || !started) return;
+  const typed = inputEl.value;
+  const last = typed[typed.length - 1];
+  if (!last) return;
+
+  const expected = currentPassage[currentIndex];
+  const span = spanEls[currentIndex];
+  if (!span) return;
+
+  span.classList.remove('current');
+  if (last === expected) {
+    span.classList.add('correct');
+  } else {
+    span.classList.add('wrong');
+    totalErrors++;
+    errorsEl.textContent = totalErrors;
+  }
+
+  totalTyped++;
+  currentIndex++;
+
+  const acc = Math.round(((totalTyped - totalErrors) / totalTyped) * 100);
+  accEl.textContent = acc;
+
+  if (currentIndex < spanEls.length) {
+    spanEls[currentIndex].classList.add('current');
+  } else {
+    endGame();
+    return;
+  }
+
+  inputEl.value = '';
+});
+
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Backspace') e.preventDefault();
+});
+
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    difficulty = btn.dataset.level;
+    resetGame();
+  });
+});
+
+startBtn.addEventListener('click', () => {
+  if (!started && !finished) {
+    started = true;
+    startGame();
+  }
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  startBtn.disabled = false;
+  resetGame();
+});
+
+buildPassage();
+</script>
+</body>
+</html>
